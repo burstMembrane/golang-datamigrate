@@ -10,10 +10,14 @@ Hard fork of `gomigrate`
 [x] Scaffold package
 [x] take cli args with cobra
 [x] Figure out how to parse a database version from the gomigrate files
-[ ] Validate the current version is current e.g all migrations have been applied
+[x] Validate the current version is current e.g all migrations have been applied
+[x] Establish whether we need a DSL like [pgloader](https://github.com/dimitri/pgloader)
+[x] Validate csv fields against migration
+[x] Track versioning with `datamigrations` table
+[x] Implement down and up commands
+[ ] Refactor
+
+### Feat: s3 download
 [ ] Figure out s3 downloading with go
-[ ] Establish whether we need a DSL like [pgloader](https://github.com/dimitri/pgloader)
 [ ] Get CSV from s3
-[ ] Validate csv fields against migration
-[ ] Track versioning with `datamigrations` table
-[ ] Implement down and up commands
+

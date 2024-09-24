@@ -18,6 +18,8 @@
 # Dependency directories (remove the comment below to include it)
 # vendor/
 
+# test migrations dir
+database/*
 # Go workspace file
 go.work
 go.work.sum
