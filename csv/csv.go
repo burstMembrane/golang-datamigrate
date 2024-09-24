@@ -9,7 +9,7 @@ import (
 	"reflect"
 	"strings"
 
-	dm "github.com/golang-datamigrate/migration"
+	dm "github.com/datamigrate/migration"
 )
 
 type Row struct {

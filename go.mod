@@ -1,4 +1,4 @@
-module github.com/golang-datamigrate
+module github.com/datamigrate
 
 go 1.22.0
 

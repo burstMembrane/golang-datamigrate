@@ -6,16 +6,16 @@ import (
 	"log"
 	"path/filepath"
 
-	"github.com/golang-datamigrate/csv"
-	"github.com/golang-datamigrate/db"
-	dm "github.com/golang-datamigrate/migration"
-	"github.com/golang-datamigrate/utils"
+	"github.com/datamigrate/csv"
+	"github.com/datamigrate/db"
+	dm "github.com/datamigrate/migration"
+	"github.com/datamigrate/utils"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/spf13/cobra"
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "golang-datamigrate",
+	Use:   "datamigrate",
 	Short: "Pin data migrations to your golang-migrate migrated db",
 	Run: func(cmd *cobra.Command, args []string) {
 		// Default action if no subcommand is provided
@@ -135,6 +135,13 @@ var downCmd = &cobra.Command{
 		conn, err := sql.Open("postgres", dbUrl)
 
 		currentDataMigrationVersion, err := db.GetVersion(conn)
+		if err != nil {
+			log.Fatalf("An error occurred while getting the current data migration version: %v", err)
+		}
+		if currentDataMigrationVersion == 0 {
+			log.Printf("The current data migration version is 0. Nothing to do. Exiting...")
+			return
+		}
 
 		fmt.Println("Current data migration version", currentDataMigrationVersion)
 
