@@ -24,16 +24,40 @@ var rootCmd = &cobra.Command{
 	},
 }
 
+func init() {
+	// Add a database flag
+	rootCmd.PersistentFlags().StringP("conn", "c", "", "Database URL")
+	// Add a path flag
+	rootCmd.PersistentFlags().StringP("path", "p", "", "Migrations directory")
+	// Add a datapath flag
+	rootCmd.PersistentFlags().StringP("datapath", "d", "", "Data Migrations directory")
+	// Add subcommands: up, down, and create
+
+	createCmd.Flags().StringP("version", "v", "", "The migration version to pin the datamigration to")
+
+	// add example
+	rootCmd.Example = `datamigrate up -c "postgres://localhost:5432/<db-name>" -p "./migrations" -d "./datamigrations"`
+	// add example for create
+	createCmd.Example = `datamigrate create -v "000001" -p "./migrations" -d "./datamigrations"`
+	rootCmd.AddCommand(upCmd)
+	rootCmd.AddCommand(downCmd)
+	rootCmd.AddCommand(createCmd)
+}
+
 // Define the 'up' subcommand
 var upCmd = &cobra.Command{
 	Use:   "up",
 	Short: "Run data migrations up",
 	Run: func(cmd *cobra.Command, args []string) {
+		dbUrl := cmd.Flag("conn").Value.String()
+		// read the migrations from the data migrations directory
+		dataMigrationsDir := cmd.Flag("datapath").Value.String()
+
 		m, version, err := connectAndCheckVersion(cmd)
 		if err != nil {
 			log.Fatalf("An error occurred: %v", err)
 		}
-		dbUrl := cmd.Flag("db-url").Value.String()
+
 		// connect to the database with sql.Open
 		conn, err := sql.Open("postgres", dbUrl)
 		if err != nil {
@@ -64,8 +88,6 @@ var upCmd = &cobra.Command{
 
 		fmt.Println("Current data migration version", currentDataMigrationVersion)
 
-		// read the migrations from the data migrations directory
-		dataMigrationsDir := cmd.Flag("datamigrations-dir").Value.String()
 		dataMigrationsDirAbs, err := filepath.Abs(dataMigrationsDir)
 		if err != nil {
 			log.Fatalf("An error occurred while getting the absolute path of the data migrations directory: %v", err)
@@ -93,7 +115,7 @@ var upCmd = &cobra.Command{
 				log.Fatalf("Data migration with version %d not found", targetVersion)
 			}
 
-			fmt.Printf("Data migration for version: %d %s\n", targetVersion, dataMigration)
+			fmt.Printf("Loading file for version: %d %s\n", targetVersion, dataMigration.CSVPath)
 
 			// load the csv
 			c, err := csv.LoadCSV(dataMigration.CSVPath, dataMigration.Delimiter)
@@ -129,10 +151,18 @@ var downCmd = &cobra.Command{
 	Short: "Revert data migrations down",
 	Run: func(cmd *cobra.Command, args []string) {
 		m, _, err := connectAndCheckVersion(cmd)
-
+		if err != nil {
+			log.Fatalf("An error occurred: %v", err)
+		}
 		// check the data migration table exists
-		dbUrl := cmd.Flag("db-url").Value.String()
+		dbUrl := cmd.Flag("conn").Value.String()
+		// get all the data migrations
+		dataMigrationsDir := cmd.Flag("datapath").Value.String()
+
 		conn, err := sql.Open("postgres", dbUrl)
+		if err != nil {
+			log.Fatalf("An error occurred while connecting to the database: %v", err)
+		}
 
 		currentDataMigrationVersion, err := db.GetVersion(conn)
 		if err != nil {
@@ -145,8 +175,6 @@ var downCmd = &cobra.Command{
 
 		fmt.Println("Current data migration version", currentDataMigrationVersion)
 
-		// get all the data migrations
-		dataMigrationsDir := cmd.Flag("datamigrations-dir").Value.String()
 		dataMigrationsDirAbs, err := filepath.Abs(dataMigrationsDir)
 		if err != nil {
 			log.Fatalf("An error occurred while getting the absolute path of the data migrations directory: %v", err)
@@ -167,7 +195,7 @@ var downCmd = &cobra.Command{
 			if dataMigration == nil {
 				log.Fatalf("Data migration with version %d not found", v)
 			}
-			fmt.Printf("Data migration for version: %d %s\n", v, dataMigration)
+			fmt.Printf("Loading file for version: %d %s\n", v, dataMigration.CSVPath)
 			db.TruncateTable(conn, dataMigration.Table)
 			db.SetVersion(conn, int(v))
 
@@ -190,9 +218,9 @@ var createCmd = &cobra.Command{
 	Short: "Create a new data migration",
 	Run: func(cmd *cobra.Command, args []string) {
 		// Implement the logic to create a new data migration
-		dataMigrationsDir := cmd.Flag("datamigrations-dir").Value.String()
+		dataMigrationsDir := cmd.Flag("datapath").Value.String()
 		// sql migrations dir
-		sqlMigrationsDir := cmd.Flag("migrations-dir").Value.String()
+		sqlMigrationsDir := cmd.Flag("path").Value.String()
 
 		version := cmd.Flag("version").Value.String()
 
@@ -256,21 +284,6 @@ var createCmd = &cobra.Command{
 	},
 }
 
-func init() {
-	// Add a db url flag
-	rootCmd.PersistentFlags().StringP("db-url", "d", "", "Database URL")
-	// Add a migrations directory flag
-	rootCmd.PersistentFlags().StringP("migrations-dir", "m", "", "Migrations directory")
-	// Add a datamigrations directory flag
-	rootCmd.PersistentFlags().String("datamigrations-dir", "", "Data Migrations directory")
-	// Add subcommands: up, down, and create
-
-	createCmd.Flags().StringP("version", "v", "", "The migration version to pin the datamigration to")
-	rootCmd.AddCommand(upCmd)
-	rootCmd.AddCommand(downCmd)
-	rootCmd.AddCommand(createCmd)
-}
-
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		log.Fatalf("An error occurred while executing the root command: %v", err)
@@ -279,7 +292,7 @@ func Execute() {
 
 func connectAndCheckVersion(cmd *cobra.Command) (*migrate.Migrate, uint, error) {
 	// Get the db url from the environment variables
-	dbUrl := cmd.Flag("db-url").Value.String()
+	dbUrl := cmd.Flag("conn").Value.String()
 
 	// Connect to the database
 	driver, err := db.ConnectDatabase(dbUrl)
@@ -287,7 +300,7 @@ func connectAndCheckVersion(cmd *cobra.Command) (*migrate.Migrate, uint, error) 
 		return nil, 0, fmt.Errorf("an error occurred while connecting to the database: %v", err)
 	}
 
-	sourceDir := cmd.Flag("migrations-dir").Value.String()
+	sourceDir := cmd.Flag("path").Value.String()
 	if sourceDir == "" {
 		return nil, 0, fmt.Errorf("the migrations directory is required")
 	}

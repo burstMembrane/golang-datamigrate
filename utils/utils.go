@@ -6,8 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/joho/godotenv"
 )
 
 func GetAbsoluteSourceDir(sourceDir string) string {
@@ -34,19 +32,4 @@ func GetMigrations(source_dir string) ([]string, error) {
 	}
 
 	return migrationFiles, nil
-}
-
-// deprecated - attempts to source DB_URL from .env
-// TODO: remove in later version
-func FetchDBURL() string {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
-
-	dbUrl, isFound := os.LookupEnv("DB_URL")
-	if !isFound {
-		log.Fatal("DB_URL not found in .env file")
-	}
-	return dbUrl
 }

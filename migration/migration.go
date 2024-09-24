@@ -264,12 +264,13 @@ func CreateMigrationFile(d *DataMigration, m *Migration) (string, error) {
 		}
 	}
 	if _, err := os.Stat(d.Path); !os.IsNotExist(err) {
-
+		// return an error if the file already exists
+		return "", fmt.Errorf("the migration file %s already exists", d.Path)
 		// debug: delete the file
-		os.Remove(d.Path)
-		// return "", fmt.Errorf("the data migration file already exists")
+		// os.Remove(d.Path)
+
 	}
-	// convert the CREATE TABLE statement to yaml
+
 	yml := ToYaml(m)
 
 	// Create the file

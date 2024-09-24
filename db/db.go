@@ -109,7 +109,7 @@ func WriteCsvToDb(db *sql.DB, csv *csv.CSV, tableName string) error {
 		for i, v := range row.Values {
 			values[i] = v
 		}
-		fmt.Println(values)
+
 		_, err = stmt.Exec(values...)
 		if err != nil {
 			tx.Rollback()
