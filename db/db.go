@@ -8,6 +8,7 @@ import (
 	"github.com/golang-migrate/migrate/v4/database"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	"github.com/lib/pq"
+	"github.com/schollz/progressbar/v3"
 )
 
 func ConnectDatabase(dsn string) (database.Driver, error) {
@@ -94,7 +95,8 @@ func WriteCsvToDb(db *sql.DB, csv *csv.CSV, tableName string) error {
 	if err != nil {
 		return err
 	}
-
+	totalRows := len(csv.Rows)
+	bar := progressbar.Default(int64(totalRows), "Copying CSV to database")
 	// Prepare the COPY statement
 	stmt, err := tx.Prepare(pq.CopyIn(tableName, csv.Columns...))
 	if err != nil {
@@ -115,6 +117,7 @@ func WriteCsvToDb(db *sql.DB, csv *csv.CSV, tableName string) error {
 			tx.Rollback()
 			return err
 		}
+		bar.Add(1)
 	}
 
 	// Signal completion of COPY

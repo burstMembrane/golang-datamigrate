@@ -15,9 +15,14 @@ Hard fork of `gomigrate`
 [x] Validate csv fields against migration
 [x] Track versioning with `datamigrations` table
 [x] Implement down and up commands
-[ ] Refactor
+[x] Progress bar for CSV loading
+[ ] Refactor (in progress)
+  [ ] Refactor down, up and create commands to separate funcs
+  [ ] Pretty cli logging and progress output
 
 ### Feat: s3 download
 [ ] Figure out s3 downloading with go
 [ ] Get CSV from s3
+[ ] Stream/hold in memory
+[ ] Conditionally load the CSV file from local or s3 location (optional)
 

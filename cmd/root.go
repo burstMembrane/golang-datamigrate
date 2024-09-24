@@ -86,27 +86,25 @@ var upCmd = &cobra.Command{
 
 		// get all the data migrations
 
-		fmt.Println("Current data migration version", currentDataMigrationVersion)
+		log.Println("Current data migration version", currentDataMigrationVersion)
 
 		dataMigrationsDirAbs, err := filepath.Abs(dataMigrationsDir)
 		if err != nil {
 			log.Fatalf("An error occurred while getting the absolute path of the data migrations directory: %v", err)
 		}
-		fmt.Println("Reading data migrations from", dataMigrationsDirAbs)
+		log.Println("Reading data migrations from", dataMigrationsDirAbs)
 		dataMigrations, err := dm.ReadDataMigrations(dataMigrationsDirAbs)
 
 		if err != nil {
 			log.Fatalf("An error occurred while reading the data migrations: %v", err)
 		}
 
-		// fmt.Println("Data migrations", dataMigrations)
+		// log.Println("Data migrations", dataMigrations)
 
 		availableVersions, err := dm.ParseVersions(dataMigrations)
 		if err != nil {
 			log.Fatalf("An error occurred while parsing the versions: %v", err)
 		}
-		fmt.Println("Available versions", availableVersions)
-
 		// range over the available versions
 		for _, targetVersion := range availableVersions {
 			// find the data migration with the corresponding version
@@ -115,7 +113,7 @@ var upCmd = &cobra.Command{
 				log.Fatalf("Data migration with version %d not found", targetVersion)
 			}
 
-			fmt.Printf("Loading file for version: %d %s\n", targetVersion, dataMigration.CSVPath)
+			fmt.Printf("Running migration file for version: %d %s\n", targetVersion, dataMigration.CSVPath)
 
 			// load the csv
 			c, err := csv.LoadCSV(dataMigration.CSVPath, dataMigration.Delimiter)
@@ -136,7 +134,7 @@ var upCmd = &cobra.Command{
 
 			db.SetVersion(conn, int(targetVersion))
 
-			fmt.Println("Data migration completed successfully")
+			log.Println("Data migration completed successfully")
 
 		}
 		defer conn.Close()
@@ -173,7 +171,7 @@ var downCmd = &cobra.Command{
 			return
 		}
 
-		fmt.Println("Current data migration version", currentDataMigrationVersion)
+		log.Println("Current data migration version", currentDataMigrationVersion)
 
 		dataMigrationsDirAbs, err := filepath.Abs(dataMigrationsDir)
 		if err != nil {
@@ -186,11 +184,11 @@ var downCmd = &cobra.Command{
 		}
 		// get the versions
 		availableVersions, err := dm.ParseVersions(dataMigrations)
-		fmt.Println("Available versions", availableVersions)
+		log.Println("Available versions", availableVersions)
 		// for range reversed over the available versions
 		for i := len(availableVersions) - 1; i >= 0; i-- {
 			v := availableVersions[i]
-			fmt.Println("Truncating table for version", v)
+			log.Println("Truncating table for version", v)
 			dataMigration := dm.GetDataMigrationByVersion(dataMigrations, v)
 			if dataMigration == nil {
 				log.Fatalf("Data migration with version %d not found", v)
@@ -203,7 +201,7 @@ var downCmd = &cobra.Command{
 
 		// set the version to 0
 		db.SetVersion(conn, 0)
-		fmt.Println("Data migrations reverted successfully")
+		log.Println("Data migrations reverted successfully")
 		if err != nil {
 			log.Fatalf("An error occurred: %v", err)
 		}
@@ -240,13 +238,13 @@ var createCmd = &cobra.Command{
 		// pad the version integer with zeros
 		version = fmt.Sprintf("%06s", version)
 
-		fmt.Println("Creating a new data migration with version", version)
+		log.Println("Creating a new data migration with version", version)
 
 		migrationDirAbs, err := filepath.Abs(dataMigrationsDir)
 		if err != nil {
 			log.Fatalf("An error occurred while getting the absolute path of the data migrations directory: %v", err)
 		}
-		fmt.Println("Creating a new data migration in", migrationDirAbs)
+		log.Println("Creating a new data migration in", migrationDirAbs)
 
 		// get all the files in the migrations directory
 		migrationFiles, err := utils.GetMigrations(sqlMigrationsDir)
@@ -260,15 +258,15 @@ var createCmd = &cobra.Command{
 		if migration == nil {
 			log.Fatalf("The migration with version %s does not exist", version)
 		}
-		fmt.Println("Found migration", dm.PrettyPrintMigration(migration))
+		log.Println("Found migration", dm.PrettyPrintMigration(migration))
 
 		// get the migration path for the data migration
 		mPath := migration.GetBasePath()
-		fmt.Println("Migration path", mPath)
+		log.Println("Migration path", mPath)
 
 		// create the dataMigration object
 		mPath = filepath.Join(migrationDirAbs, fmt.Sprintf("%s_%s.yml", version, migration.Name))
-		fmt.Println("Data migration path", mPath)
+		log.Println("Data migration path", mPath)
 		dataMigration := &dm.DataMigration{
 			Migration: migration,
 			Path:      mPath,

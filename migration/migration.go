@@ -173,7 +173,7 @@ func ToYaml(migration *Migration) []byte {
 	}
 
 	_, _ = w.Walk(stmts, nil)
-	fmt.Println("Table Name: ", tableName)
+	log.Println("Table Name: ", tableName)
 
 	m := MigrationDDL{
 		Version:   migration.Version,
@@ -187,7 +187,7 @@ func ToYaml(migration *Migration) []byte {
 	if err != nil {
 		log.Fatalf("An error occurred while marshalling the migration to yaml: %v", err)
 	}
-	fmt.Println(string(yaml))
+	log.Println(string(yaml))
 
 	return yaml
 

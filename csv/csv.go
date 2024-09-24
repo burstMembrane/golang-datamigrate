@@ -4,12 +4,14 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
 
 	dm "github.com/datamigrate/migration"
+	"github.com/schollz/progressbar/v3"
 )
 
 type Row struct {
@@ -22,6 +24,26 @@ type CSV struct {
 	Rows      []Row
 }
 
+func countLines(filename string) (int, error) {
+	file, err := os.Open(filename)
+	if err != nil {
+		return 0, err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	lineCount := 0
+	for scanner.Scan() {
+		lineCount++
+	}
+
+	if err := scanner.Err(); err != nil {
+		return 0, err
+	}
+
+	return lineCount, nil
+}
+
 func LoadCSV(path string, delimiter string) (*CSV, error) {
 	// Load CSV file
 
@@ -30,14 +52,19 @@ func LoadCSV(path string, delimiter string) (*CSV, error) {
 	if err != nil {
 		return nil, fmt.Errorf("an error occurred while getting the absolute path of the csv file: %v", err)
 	}
-	fmt.Println("Loading csv from path: ", absPath)
+	log.Println("Loading csv from path: ", absPath)
 	file, err := os.Open(absPath)
 	if err != nil {
 		return nil, fmt.Errorf("an error occurred while opening the file: %v", err)
 	}
 	defer file.Close()
 
-	// Read the file
+	totalLines, err := countLines(absPath)
+	if err != nil {
+		return nil, fmt.Errorf("an error occurred while counting the lines in the file: %v", err)
+	}
+	bar := progressbar.Default(int64(totalLines), "Loading CSV from path: "+path)
+
 	reader := bufio.NewReader(file)
 	index := 0
 
@@ -82,6 +109,8 @@ func LoadCSV(path string, delimiter string) (*CSV, error) {
 		}
 
 		index++
+		bar.Add(1)
+
 		if err == io.EOF {
 			break
 		}
