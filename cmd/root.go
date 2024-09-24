@@ -148,8 +148,14 @@ var downCmd = &cobra.Command{
 		// get all the data migrations
 		dataMigrationsDir := cmd.Flag("datamigrations-dir").Value.String()
 		dataMigrationsDirAbs, err := filepath.Abs(dataMigrationsDir)
+		if err != nil {
+			log.Fatalf("An error occurred while getting the absolute path of the data migrations directory: %v", err)
+		}
 
 		dataMigrations, err := dm.ReadDataMigrations(dataMigrationsDirAbs)
+		if err != nil {
+			log.Fatalf("An error occurred while reading the data migrations: %v", err)
+		}
 		// get the versions
 		availableVersions, err := dm.ParseVersions(dataMigrations)
 		fmt.Println("Available versions", availableVersions)
