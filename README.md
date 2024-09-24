@@ -20,6 +20,9 @@ Hard fork of `gomigrate`
   [ ] Refactor down, up and create commands to separate funcs
   [ ] Pretty cli logging and progress output
 
+### Feat: Goto and version
+[ ] Goto version: revert to a specified version of the data migrations bidrectionally
+
 ### Feat: s3 download
 [ ] Figure out s3 downloading with go
 [ ] Get CSV from s3
